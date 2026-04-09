@@ -1,0 +1,15 @@
+<script>
+  fetch('/api/v1.0/users')
+    .then(res => res.json())
+    .then(users => {
+      const list = document.getElementById('users');
+
+      users.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = user.firstName + ' ' + user.lastName;
+        list.appendChild(li);
+      });
+    });
+</script>
+
+<ul id="users"></ul>

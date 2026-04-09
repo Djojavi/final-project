@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import { userRouter } from './routes/user.ts'
 import { postRouter } from './routes/posts.ts'
 
-const app: Application = express();
+export const app: Application = express();
 const PORT = 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename)

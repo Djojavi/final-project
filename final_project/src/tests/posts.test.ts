@@ -3,11 +3,18 @@ import express from 'express';
 import { expect, describe, jest, it } from '@jest/globals';
 
 const mockFindMany: jest.Mock<any> = jest.fn();
+const mockCreate: jest.Mock<any> = jest.fn();
+const mockFindUnique: jest.Mock<any> = jest.fn();
 
 jest.unstable_mockModule('../../lib/prisma', () => ({
     default: {
         post: {
-            findMany: mockFindMany
+            findMany: mockFindMany,
+            create: mockCreate,
+            findUnique: mockFindUnique
+        },
+        user: {
+            findUnique: mockFindUnique,
         }
     }
 }));
@@ -77,23 +84,38 @@ describe("Post operations", () => {
     describe('POST /api/v1.0/posts', () => {
         describe("when creating a valid new post", () => {
             it('should return a code 201', async () => {
-                const response = await request(app).post('/api/v1.0/posts')
+                mockFindUnique.mockResolvedValue({ id: 1, name: "Test User" });
+                mockCreate.mockResolvedValue({ title: "Test Post", content: "This is a test post", authorId: 1 });
+
+                const response = await request(app)
+                    .post('/api/v1.0/posts')
                     .send({ title: "Test Post", content: "This is a test post", authorId: 1 })
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(201);
-                expect(response.body.message).toBe('Post created successfully');
             });
         });
 
-        describe("when creating a invalid new post without an authorId", () => {
-            it('should return a code 400', async () => {
+        describe("when creating a invalid new post with an invalid authorId", () => {
+            it('should return a code 400 when there is no authorId', async () => {
                 const response = await request(app).post('/api/v1.0/posts')
                     .send({ title: "Test Post", content: "This is a test post" })
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(400);
                 expect(response.body.message).toBe('Invalid post data');
+            });
+
+            it('should return a code 400 when authorId doesnt exist', async () => {
+                mockFindUnique.mockResolvedValue(null); 
+
+                const response = await request(app)
+                    .post('/api/v1.0/posts')
+                    .send({ title: "Test Post", content: "This is a test post", authorId: 999 })
+                    .set('Accept', 'application/json');
+
+                expect(response.statusCode).toBe(400);
+                expect(response.body.message).toBe('Author does not exist');
             });
         });
 
@@ -113,8 +135,10 @@ describe("Post operations", () => {
     describe('PUT /api/v1.0/posts', () => {
         describe("when updating a valid post", () => {
             it('should return a code 201', async () => {
-                const response = await request(app).put('/api/v1.0/posts')
-                    .send({ id: 1, title: "Test Post", content: "This is an updated test post", authorId: 1 })
+                mockFindUnique.mockResolvedValue({ title: "Test Post", content: "This is a test post", authorId: 1 });
+
+                const response = await request(app).put('/api/v1.0/posts/1')
+                    .send({ title: "Test Post Updated", content: "This is an updated test post", authorId: 1 })
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(201);

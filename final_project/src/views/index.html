@@ -14,7 +14,12 @@
   <div style="max-width:800px; margin:40px auto; padding:0 20px;">
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-      <h1 style="margin:0; font-size:24px;">My Posts</h1>
+
+      <div style="display:flex; justify-content:space-between; gap:10px">
+        <h1 style="margin:0; font-size:24px;">My Posts</h1>
+        <h1 style="margin:0; font-size:24px; color: #858585; cursor: pointer;" onclick="window.location.href = '/users'">Users</h1>
+      </div>
+
 
       <div style="display:flex; gap:10px;">
         <button onclick="openCreateDialog()"
@@ -22,10 +27,17 @@
           <i class="fi fi-rr-plus"></i> Create
         </button>
 
+
+        <button
+          style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#072168; color:white; display:flex; align-items:center; gap:6px;">
+          <i class="fi fi-rr-letter-case"></i>
+          Order Alphabetically</button>
+
         <button onclick="logout()"
           style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#e0e0e0; color:#333; display:flex; align-items:center; gap:6px;">
           <i class="fi fi-rr-sign-out"></i> Logout
         </button>
+
       </div>
     </div>
 
@@ -96,7 +108,7 @@
 
   <script>
     const token = localStorage.getItem("token");
-    let allPosts = []; 
+    let allPosts = [];
 
     // FETCH POSTS
     fetch('/api/v1.0/posts', {
@@ -152,7 +164,7 @@
 
     function openUpdateDialog(id) {
       const dialog = document.getElementById('updateDialog');
-      
+
       const post = allPosts.find(p => p.id === id);
 
       if (post) {
@@ -229,4 +241,5 @@
   </script>
 
 </body>
+
 </html>

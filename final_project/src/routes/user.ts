@@ -20,7 +20,7 @@ const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
 });
 
-userRouter.get('/api/v1.0/users', async (req: Request, res: Response) => {
+userRouter.get('/api/v1.0/users', authMiddleware,  async (req: Request, res: Response) => {
   const users = await prisma.user.findMany();
 
   res.json(users);

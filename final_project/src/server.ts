@@ -21,8 +21,11 @@ app.get('/', (req, res) => {
 });
 
 app.get('/home', (req, res) => {
-  console.log(req.headers);
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
+});
+
+app.get('/users', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'users.html'));
 });
 
 app.listen(PORT, () => {

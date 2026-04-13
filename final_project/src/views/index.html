@@ -96,7 +96,7 @@
 
   <script>
     const token = localStorage.getItem("token");
-    let allPosts = []; // Local cache to store posts for editing
+    let allPosts = []; 
 
     // FETCH POSTS
     fetch('/api/v1.0/posts', {
@@ -109,7 +109,7 @@
         return res.json();
       })
       .then(posts => {
-        allPosts = posts; // Store the array so we can find objects by ID later
+        allPosts = posts;
         const container = document.getElementById('posts');
 
         if (posts.length === 0) {
@@ -142,23 +142,17 @@
       })
       .catch(err => {
         console.error(err);
-        // alert("Session expired. Please log in again.");
-        // localStorage.removeItem("token");
-        // window.location.href = "/login.html";
       });
 
-    // OPEN CREATE MODAL (Reset values)
     function openCreateDialog() {
       document.getElementById("title").value = "";
       document.getElementById("content").value = "";
       document.getElementById('createDialog').showModal();
     }
 
-    // OPEN UPDATE MODAL (Fill values by ID)
     function openUpdateDialog(id) {
       const dialog = document.getElementById('updateDialog');
       
-      // Find the specific post data from our local cache
       const post = allPosts.find(p => p.id === id);
 
       if (post) {
@@ -171,7 +165,6 @@
       }
     }
 
-    // DELETE POST
     async function deletePost(id) {
       const confirmDelete = confirm("Delete this post?");
       if (!confirmDelete) return;

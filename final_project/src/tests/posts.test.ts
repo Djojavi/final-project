@@ -7,6 +7,7 @@ process.env.JWT_SECRET = 'test-secret';
 const mockFindMany: jest.Mock<any> = jest.fn();
 const mockCreate: jest.Mock<any> = jest.fn();
 const mockUpdate: jest.Mock<any> = jest.fn();
+const mockDelete: jest.Mock<any> = jest.fn();
 const mockFindUnique: jest.Mock<any> = jest.fn();
 
 jest.unstable_mockModule('../../lib/prisma', () => ({
@@ -14,6 +15,7 @@ jest.unstable_mockModule('../../lib/prisma', () => ({
         post: {
             findMany: mockFindMany,
             create: mockCreate,
+            delete: mockCreate,
             update: mockUpdate,
             findUnique: mockFindUnique
         },
@@ -169,7 +171,6 @@ describe("Post operations", () => {
                     .send({ title: "Test Post", content: "This is an updated test post", authorId: 1 })
                     .set("Authorization", `Bearer ${token}`)
                     .set('Accept', 'application/json');
-                console.log("Response:", response.body);
 
                 expect(response.statusCode).toBe(404);
                 expect(response.body.message).toBe('Post not found');
@@ -180,8 +181,12 @@ describe("Post operations", () => {
     describe('DELETE /api/v1.0/posts', () => {
         describe("when deleting a valid post", () => {
             it('should return a code 201', async () => {
-                const response = await request(app).delete('/api/v1.0/posts')
-                    .send({ id: 1 })
+                mockFindUnique.mockResolvedValue({ id: 1, title: "Test Post", content: "This is a test post", authorId: 1 });
+                mockDelete.mockResolvedValue({ id: 1 });
+
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+                const response = await request(app).delete('/api/v1.0/posts/1')
+                    .set("Authorization", `Bearer ${token}`)
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(201);
@@ -191,8 +196,12 @@ describe("Post operations", () => {
 
         describe("when deleting a post which id doesnt exist", () => {
             it('should return a code 404', async () => {
-                const response = await request(app).delete('/api/v1.0/posts')
-                    .send({ id: 500 })
+                mockFindUnique.mockResolvedValue(null);
+
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+
+                const response = await request(app).delete('/api/v1.0/posts/500')
+                    .set("Authorization", `Bearer ${token}`)
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(404);

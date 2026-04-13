@@ -75,3 +75,21 @@ postRouter.put('/api/v1.0/posts/:id', authMiddleware, async (req: Request, res: 
   
   res.status(201).json({ message: 'Post updated successfully', post: updatedPost });
 });
+
+postRouter.delete('/api/v1.0/posts/:id', authMiddleware, async (req: Request, res: Response) => {
+  const postId = parseInt(req.params.id as string);
+  
+  const existingPost = await prisma.post.findUnique({
+    where: { id: postId }
+  });
+
+  if (!existingPost) {
+    return res.status(404).json({ message: 'Post not found' });
+  }
+  
+  await prisma.post.delete({
+    where: { id: postId }
+  });
+
+  res.status(201).json({ message: 'Post deleted successfully' });
+});

@@ -34,7 +34,7 @@ describe("Post operations", () => {
 
     describe("GET /api/v1.0/posts", () => {
         describe("when there are posts", () => {
-            it("should return posts", async () => {
+            it("should return a list of posts", async () => {
                 mockFindMany.mockResolvedValue([
                     { id: 1, title: "First Post", content: "This is the first post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
                     { id: 2, title: "Second Post", content: "This is the second post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
@@ -72,7 +72,7 @@ describe("Post operations", () => {
 
 
         describe("when there are posts with missing attributes", () => {
-            it("should return posts", async () => {
+            it("should return a list of posts", async () => {
                 mockFindMany.mockResolvedValue([
                     { id: 1, title: "First Post", content: "This is the first post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
                     { id: 2, title: "Second Post", content: "This is the second post", authorId: 1 },
@@ -98,7 +98,7 @@ describe("Post operations", () => {
 
     describe('POST /api/v1.0/posts', () => {
         describe("when creating a valid new post", () => {
-            it('should return a code 201', async () => {
+            it('should successfully create a new post with valid data', async () => {
                 mockFindUnique.mockResolvedValue({ id: 1, name: "Test User" });
                 mockCreate.mockResolvedValue({ title: "Test Post", content: "This is a test post", authorId: 1 });
 
@@ -114,7 +114,7 @@ describe("Post operations", () => {
         });
 
         describe("when creating a invalid new post without a title", () => {
-            it('should return a code 400', async () => {
+            it('should reject the creation when the title is missing', async () => {
                 const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
                 const response = await request(app)
                     .post('/api/v1.0/posts')
@@ -131,7 +131,7 @@ describe("Post operations", () => {
 
     describe('PUT /api/v1.0/posts', () => {
         describe("when updating a valid post", () => {
-            it('should return a code 201', async () => {
+            it('should successfully update an existing post with valid data', async () => {
                 mockFindUnique.mockResolvedValue({ title: "Test Post", content: "This is a test post", authorId: 1 });
                 mockUpdate.mockResolvedValue({ id: 1, title: "Test Post Updated", content: "This is an updated test post", authorId: 1 });
 
@@ -150,7 +150,7 @@ describe("Post operations", () => {
 
 
         describe("when updating a invalid post without a title", () => {
-            it('should return a code 400', async () => {
+            it('should reject the update when the title is missing', async () => {
                 const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
                 const response = await request(app).put('/api/v1.0/posts/1')
                     .send({ id: 1, content: "This is an updated test post", authorId: 1 })
@@ -163,7 +163,7 @@ describe("Post operations", () => {
         });
 
         describe("when updating a post which id doesnt exist", () => {
-            it('should return a code 404', async () => {
+            it('should reject the update when the post does not exist', async () => {
                 mockFindUnique.mockResolvedValue(null);
 
                 const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
@@ -180,7 +180,7 @@ describe("Post operations", () => {
 
     describe('DELETE /api/v1.0/posts', () => {
         describe("when deleting a valid post", () => {
-            it('should return a code 201', async () => {
+            it('should successfully delete an existing post', async () => {
                 mockFindUnique.mockResolvedValue({ id: 1, title: "Test Post", content: "This is a test post", authorId: 1 });
                 mockDelete.mockResolvedValue({ id: 1 });
 
@@ -195,7 +195,7 @@ describe("Post operations", () => {
         });
 
         describe("when deleting a post which id doesnt exist", () => {
-            it('should return a code 404', async () => {
+            it('should reject the deletion when the post does not exist', async () => {
                 mockFindUnique.mockResolvedValue(null);
 
                 const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);

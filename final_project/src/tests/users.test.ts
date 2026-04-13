@@ -3,11 +3,15 @@ import express from 'express';
 import { expect, describe, jest, it } from '@jest/globals';
 
 const mockFindMany: jest.Mock<any> = jest.fn();
+const mockCreate: jest.Mock<any> = jest.fn();
+const mockFindUnique: jest.Mock<any> = jest.fn();
 
 jest.unstable_mockModule('../../lib/prisma', () => ({
-  default: {  // <-- must be "default" to match "export default prisma"
+  default: {
     user: {
-      findMany: mockFindMany
+      findMany: mockFindMany,
+      create: mockCreate,
+      findUnique: mockFindUnique
     }
   }
 }));
@@ -77,37 +81,71 @@ describe("User operations", () => {
   describe("POST /api/v1.0/users", () => {
     describe("when creating a valid new user", () => {
       it('should return a code 201', async () => {
+        mockFindUnique.mockResolvedValue(null);
+        mockCreate.mockResolvedValue({ id: 1, email: "testCreate@gmail.com", firstName: "Test", lastName: "User", password: "testPassword1" });
+
         const response = await request(app).post('/api/v1.0/users')
-          .send({ email: "testCreate@gmail.com", firstName: "Test", lastName: "User", password: "testpassword" })
+          .send({ email: "testCreate@gmail.com", firstName: "Test", lastName: "User", password: "testPassword1" })
           .set('Accept', 'application/json');
 
         expect(response.statusCode).toBe(201);
-        expect(response.body.message).toBe('User created successfully');
+        expect(response.body.email).toBe('testCreate@gmail.com');
+        expect(response.body.firstName).toBe('Test');
       });
     });
 
     describe("when creating a new user with invalid inputs", () => {
       it("should return 400 when email is invalid", async () => {
         const response = await request(app).post('/api/v1.0/users')
-          .send({ email: "invalid-email", firstName: "Test", lastName: "User", password: "testpassword" })
+          .send({ email: "invalid-email", firstName: "Test", lastName: "User", password: "testPassword1" })
           .set('Accept', 'application/json');
 
         expect(response.statusCode).toBe(400);
-        expect(response.body.message).toBe('Invalid email');
+        expect(response.body.message).toBe('Invalid email format');
       });
 
-      it("should return 400 when password is too weak", async () => {
-        const response = await request(app).post('/api/v1.0/users')
-          .send({ email: "weakpass@gmail.com", firstName: "Test", lastName: "User", password: "123" })
-          .set('Accept', 'application/json');
+      describe("when creating a new user with invalid password format", () => {
+        it("should return 400 when password has less than 6 digits ", async () => {
+          const response = await request(app).post('/api/v1.0/users')
+            .send({ email: "weakpass@gmail.com", firstName: "Test", lastName: "User", password: "123" })
+            .set('Accept', 'application/json');
 
-        expect(response.statusCode).toBe(400);
-        expect(response.body.message).toBe('Password is too weak');
-      });
+          expect(response.statusCode).toBe(400);
+          expect(response.body.message).toBe('Password should have at least 6 digits');
+        });
+
+        it("should return 400 when password doesnt contain an uppercase letter ", async () => {
+          const response = await request(app).post('/api/v1.0/users')
+            .send({ email: "weakpass@gmail.com", firstName: "Test", lastName: "User", password: "abcdefgh" })
+            .set('Accept', 'application/json');
+
+          expect(response.statusCode).toBe(400);
+          expect(response.body.message).toBe('Password should have at least one uppercase letter');
+        });
+
+        it("should return 400 when password doesnt contain a lowercase letter ", async () => {
+          const response = await request(app).post('/api/v1.0/users')
+            .send({ email: "weakpass@gmail.com", firstName: "Test", lastName: "User", password: "ABCDEFGHTIF" })
+            .set('Accept', 'application/json');
+
+          expect(response.statusCode).toBe(400);
+          expect(response.body.message).toBe('Password should have at least one lowercase letter');
+        });
+
+        it("should return 400 when password doesnt contain a number ", async () => {
+          const response = await request(app).post('/api/v1.0/users')
+            .send({ email: "weakpass@gmail.com", firstName: "Test", lastName: "User", password: "abcdEFGHI" })
+            .set('Accept', 'application/json');
+
+          expect(response.statusCode).toBe(400);
+          expect(response.body.message).toBe('Password should have at least one number');
+        });
+      })
+
 
       it("should return 400 when required attributes are missing", async () => {
         const response = await request(app).post('/api/v1.0/users')
-          .send({ email: "missingfields@gmail.com"})
+          .send({ email: "missingfields@gmail.com" })
           .set('Accept', 'application/json');
 
         expect(response.statusCode).toBe(400);
@@ -115,11 +153,10 @@ describe("User operations", () => {
       });
 
       it("should return 409 when email is already in use", async () => {
-        await request(app).post('/api/v1.0/users')
-          .send({ email: "duplicate@gmail.com", firstName: "Test", lastName: "User", password: "testpassword"});
+        mockFindUnique.mockResolvedValue({id: 1, email: "duplicate@gmail.com", firstName: "Test", lastName: "User", password: "testPassword1"});
 
         const response = await request(app).post('/api/v1.0/users')
-          .send({email: "duplicate@gmail.com",firstName: "Test",lastName: "User",password: "testpassword"})
+          .send({ email: "duplicate@gmail.com", firstName: "Test", lastName: "User", password: "testPassword1" })
           .set('Accept', 'application/json');
 
         expect(response.statusCode).toBe(409);

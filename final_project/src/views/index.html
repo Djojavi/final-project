@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Blog</title>
 
-  <!-- Flaticon Icons -->
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
 </head>
 
@@ -14,12 +13,11 @@
 
   <div style="max-width:800px; margin:40px auto; padding:0 20px;">
 
-    <!-- HEADER FLEX -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
       <h1 style="margin:0; font-size:24px;">My Posts</h1>
 
       <div style="display:flex; gap:10px;">
-        <button onclick="document.getElementById('myDialog').showModal()"
+        <button onclick="openCreateDialog()"
           style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#4CAF50; color:white; display:flex; align-items:center; gap:6px;">
           <i class="fi fi-rr-plus"></i> Create
         </button>
@@ -31,45 +29,65 @@
       </div>
     </div>
 
-    <!-- POSTS -->
-    <div id="posts" style="display:flex; flex-direction:column; gap:15px;"></div>
+    <div id="posts" style="display:flex; flex-direction:column; gap:15px;">
+    </div>
 
-    <!-- DIALOG -->
-    <dialog id="myDialog"
+    <dialog id="createDialog"
       style="border:none; border-radius:12px; padding:0; width:100%; max-width:400px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
 
       <div style="padding:20px; display:flex; flex-direction:column; gap:15px;">
-
         <h2 style="margin:0; font-size:20px;">Create a Post</h2>
-
         <form onsubmit="event.preventDefault(); savePost();" style="display:flex; flex-direction:column; gap:12px;">
-
           <div style="display:flex; flex-direction:column; gap:5px;">
             <label for="title" style="font-size:14px; color:#555;">Title</label>
             <input type="text" id="title" name="title" required
               style="padding:10px; border-radius:6px; border:1px solid #ccc; font-size:14px; outline:none;">
           </div>
-
           <div style="display:flex; flex-direction:column; gap:5px;">
             <label for="content" style="font-size:14px; color:#555;">Content</label>
             <textarea id="content" name="content" required rows="4"
               style="padding:10px; border-radius:6px; border:1px solid #ccc; font-size:14px; resize:none; outline:none;"></textarea>
           </div>
-
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-
-            <button type="button" onclick="document.getElementById('myDialog').close()"
+            <button type="button" onclick="document.getElementById('createDialog').close()"
               style="background:#e0e0e0; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">
               Cancel
             </button>
-
             <button type="submit"
               style="background:#4CAF50; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">
               Save
             </button>
-
           </div>
+        </form>
+      </div>
+    </dialog>
 
+    <dialog id="updateDialog"
+      style="border:none; border-radius:12px; padding:0; width:100%; max-width:400px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+
+      <div style="padding:20px; display:flex; flex-direction:column; gap:15px;">
+        <h2 style="margin:0; font-size:20px;">Update a Post</h2>
+        <form onsubmit="event.preventDefault(); editPost();" style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <label for="titleUpdate" style="font-size:14px; color:#555;">Title</label>
+            <input type="text" id="titleUpdate" name="titleUpdate" required
+              style="padding:10px; border-radius:6px; border:1px solid #ccc; font-size:14px; outline:none;">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <label for="contentUpdate" style="font-size:14px; color:#555;">Content</label>
+            <textarea id="contentUpdate" name="contentUpdate" required rows="4"
+              style="padding:10px; border-radius:6px; border:1px solid #ccc; font-size:14px; resize:none; outline:none;"></textarea>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+            <button type="button" onclick="document.getElementById('updateDialog').close()"
+              style="background:#e0e0e0; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">
+              Cancel
+            </button>
+            <button type="submit"
+              style="background:#4CAF50; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">
+              Save
+            </button>
+          </div>
         </form>
       </div>
     </dialog>
@@ -78,11 +96,7 @@
 
   <script>
     const token = localStorage.getItem("token");
-
-    if (!token) {
-      alert("You are not logged in");
-      window.location.href = "/login.html";
-    }
+    let allPosts = []; // Local cache to store posts for editing
 
     // FETCH POSTS
     fetch('/api/v1.0/posts', {
@@ -95,6 +109,7 @@
         return res.json();
       })
       .then(posts => {
+        allPosts = posts; // Store the array so we can find objects by ID later
         const container = document.getElementById('posts');
 
         if (posts.length === 0) {
@@ -104,35 +119,57 @@
 
         posts.forEach(post => {
           const div = document.createElement('div');
-
           div.style = "background:white; padding:20px; border:1px solid #ddd; border-radius:6px;";
 
           div.innerHTML = `
-      <h3 style="margin:0 0 10px;">${post.title}</h3>
-      <p style="color:#555; font-size:14px;">${post.content}</p>
+            <h3 style="margin:0 0 10px;">${post.title}</h3>
+            <p style="color:#555; font-size:14px;">${post.content}</p>
 
-      <div style="margin-top:15px; display:flex; gap:10px;">
-        <button onclick="editPost(${post.id})"
-          style="border:none; border-radius:6px; padding:6px 10px; cursor:pointer; background:#e0e0e0; display:flex; align-items:center; gap:6px;">
-          <i class="fi fi-rr-edit"></i> Edit
-        </button>
+            <div style="margin-top:15px; display:flex; gap:10px;">
+              <button onclick="openUpdateDialog(${post.id})"
+                style="border:none; border-radius:6px; padding:6px 10px; cursor:pointer; background:#e0e0e0; display:flex; align-items:center; gap:6px;">
+                <i class="fi fi-rr-edit"></i> Edit
+              </button>
 
-        <button onclick="deletePost(${post.id})"
-          style="border:none; border-radius:6px; padding:6px 10px; cursor:pointer; background:#f44336; color:white; display:flex; align-items:center; gap:6px;">
-          <i class="fi fi-rr-trash"></i> Delete
-        </button>
-      </div>
-    `;
-
+              <button onclick="deletePost(${post.id})"
+                style="border:none; border-radius:6px; padding:6px 10px; cursor:pointer; background:#f44336; color:white; display:flex; align-items:center; gap:6px;">
+                <i class="fi fi-rr-trash"></i> Delete
+              </button>
+            </div>
+          `;
           container.appendChild(div);
         });
       })
       .catch(err => {
         console.error(err);
-        alert("Session expired. Please log in again.");
-        localStorage.removeItem("token");
-        window.location.href = "/login.html";
+        // alert("Session expired. Please log in again.");
+        // localStorage.removeItem("token");
+        // window.location.href = "/login.html";
       });
+
+    // OPEN CREATE MODAL (Reset values)
+    function openCreateDialog() {
+      document.getElementById("title").value = "";
+      document.getElementById("content").value = "";
+      document.getElementById('createDialog').showModal();
+    }
+
+    // OPEN UPDATE MODAL (Fill values by ID)
+    function openUpdateDialog(id) {
+      const dialog = document.getElementById('updateDialog');
+      
+      // Find the specific post data from our local cache
+      const post = allPosts.find(p => p.id === id);
+
+      if (post) {
+        dialog.dataset.id = post.id;
+        document.getElementById('titleUpdate').value = post.title;
+        document.getElementById('contentUpdate').value = post.content;
+        dialog.showModal();
+      } else {
+        console.error("Post not found");
+      }
+    }
 
     // DELETE POST
     async function deletePost(id) {
@@ -145,29 +182,7 @@
           Authorization: `Bearer ${token}`
         }
       });
-
       location.reload();
-    }
-
-    // EDIT POST
-    function editPost(id) {
-      const newTitle = prompt("New title:");
-      if (!newTitle) return;
-
-      const newContent = prompt("New content:");
-      if (!newContent) return;
-
-      fetch(`/api/v1.0/posts/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          title: newTitle,
-          content: newContent
-        })
-      }).then(() => location.reload());
     }
 
     // LOGOUT
@@ -176,25 +191,49 @@
       window.location.href = "/";
     }
 
-    //SAVE POST
-    function savePost() {
+    // SAVE NEW POST
+    async function savePost() {
       const title = document.getElementById("title").value;
       const content = document.getElementById("content").value;
 
-      fetch('/api/v1.0/posts', {
+      const res = await fetch('/api/v1.0/posts', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ title, content })
-      }).then(() => {
-        document.getElementById('myDialog').close();
-        location.reload();
       });
+
+      if (res.ok) {
+        document.getElementById('createDialog').close();
+        location.reload();
+      }
+    }
+
+    // EDIT POST
+    async function editPost() {
+      const dialog = document.getElementById('updateDialog');
+      const id = dialog.dataset.id;
+
+      const title = document.getElementById("titleUpdate").value;
+      const content = document.getElementById("contentUpdate").value;
+
+      const res = await fetch(`/api/v1.0/posts/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, content })
+      });
+
+      if (res.ok) {
+        dialog.close();
+        location.reload();
+      }
     }
   </script>
 
 </body>
-
 </html>

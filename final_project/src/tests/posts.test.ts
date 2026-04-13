@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 process.env.JWT_SECRET = 'test-secret';
 const mockFindMany: jest.Mock<any> = jest.fn();
 const mockCreate: jest.Mock<any> = jest.fn();
+const mockUpdate: jest.Mock<any> = jest.fn();
 const mockFindUnique: jest.Mock<any> = jest.fn();
 
 jest.unstable_mockModule('../../lib/prisma', () => ({
@@ -13,6 +14,7 @@ jest.unstable_mockModule('../../lib/prisma', () => ({
         post: {
             findMany: mockFindMany,
             create: mockCreate,
+            update: mockUpdate,
             findUnique: mockFindUnique
         },
         user: {
@@ -37,7 +39,7 @@ describe("Post operations", () => {
                     { id: 3, title: "Third Post", content: "This is the third post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
                     { id: 4, title: "Fourth Post", content: "This is the fourth post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
                 ]);
-                const token = jwt.sign({ userId: 1 },process.env.JWT_SECRET!);
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
                 const res = await request(app)
                     .get("/api/v1.0/posts")
                     .set("Authorization", `Bearer ${token}`);
@@ -56,7 +58,7 @@ describe("Post operations", () => {
             it("should return an empty list", async () => {
                 mockFindMany.mockResolvedValue([]);
 
-                const token = jwt.sign({ userId: 1 },process.env.JWT_SECRET!);
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
                 const res = await request(app)
                     .get("/api/v1.0/posts")
                     .set("Authorization", `Bearer ${token}`);
@@ -76,7 +78,7 @@ describe("Post operations", () => {
                     { id: 4, title: "Fourth Post", content: "This is the fourth post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
                 ]);
 
-                const token = jwt.sign({ userId: 1 },process.env.JWT_SECRET!);
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
                 const res = await request(app)
                     .get("/api/v1.0/posts")
                     .set("Authorization", `Bearer ${token}`);
@@ -98,42 +100,24 @@ describe("Post operations", () => {
                 mockFindUnique.mockResolvedValue({ id: 1, name: "Test User" });
                 mockCreate.mockResolvedValue({ title: "Test Post", content: "This is a test post", authorId: 1 });
 
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
                 const response = await request(app)
                     .post('/api/v1.0/posts')
                     .send({ title: "Test Post", content: "This is a test post", authorId: 1 })
+                    .set("Authorization", `Bearer ${token}`)
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(201);
             });
         });
 
-        describe("when creating a invalid new post with an invalid authorId", () => {
-            it('should return a code 400 when there is no authorId', async () => {
-                const response = await request(app).post('/api/v1.0/posts')
-                    .send({ title: "Test Post", content: "This is a test post" })
-                    .set('Accept', 'application/json');
-
-                expect(response.statusCode).toBe(400);
-                expect(response.body.message).toBe('Invalid post data');
-            });
-
-            it('should return a code 400 when authorId doesnt exist', async () => {
-                mockFindUnique.mockResolvedValue(null);
-
-                const response = await request(app)
-                    .post('/api/v1.0/posts')
-                    .send({ title: "Test Post", content: "This is a test post", authorId: 999 })
-                    .set('Accept', 'application/json');
-
-                expect(response.statusCode).toBe(400);
-                expect(response.body.message).toBe('Author does not exist');
-            });
-        });
-
         describe("when creating a invalid new post without a title", () => {
             it('should return a code 400', async () => {
-                const response = await request(app).post('/api/v1.0/posts')
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+                const response = await request(app)
+                    .post('/api/v1.0/posts')
                     .send({ content: "This is a test post", authorId: 1 })
+                    .set("Authorization", `Bearer ${token}`)
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(400);
@@ -147,31 +131,28 @@ describe("Post operations", () => {
         describe("when updating a valid post", () => {
             it('should return a code 201', async () => {
                 mockFindUnique.mockResolvedValue({ title: "Test Post", content: "This is a test post", authorId: 1 });
+                mockUpdate.mockResolvedValue({ id: 1, title: "Test Post Updated", content: "This is an updated test post", authorId: 1 });
 
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
                 const response = await request(app).put('/api/v1.0/posts/1')
-                    .send({ title: "Test Post Updated", content: "This is an updated test post", authorId: 1 })
+                    .send({ title: "Test Post Updated", content: "This is an updated test post" })
+                    .set("Authorization", `Bearer ${token}`)
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(201);
                 expect(response.body.message).toBe('Post updated successfully');
+
+
             });
         });
 
-        describe("when updating a invalid post without an authorId", () => {
-            it('should return a code 400', async () => {
-                const response = await request(app).put('/api/v1.0/posts')
-                    .send({ id: 1, title: "Test Post", content: "This is an updated test post" })
-                    .set('Accept', 'application/json');
-
-                expect(response.statusCode).toBe(400);
-                expect(response.body.message).toBe('Invalid post data');
-            });
-        });
 
         describe("when updating a invalid post without a title", () => {
             it('should return a code 400', async () => {
-                const response = await request(app).put('/api/v1.0/posts')
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+                const response = await request(app).put('/api/v1.0/posts/1')
                     .send({ id: 1, content: "This is an updated test post", authorId: 1 })
+                    .set("Authorization", `Bearer ${token}`)
                     .set('Accept', 'application/json');
 
                 expect(response.statusCode).toBe(400);
@@ -181,9 +162,14 @@ describe("Post operations", () => {
 
         describe("when updating a post which id doesnt exist", () => {
             it('should return a code 404', async () => {
-                const response = await request(app).put('/api/v1.0/posts')
-                    .send({ id: 500, content: "This is an updated test post", authorId: 1 })
+                mockFindUnique.mockResolvedValue(null);
+
+                const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+                const response = await request(app).put('/api/v1.0/posts/500')
+                    .send({ title: "Test Post", content: "This is an updated test post", authorId: 1 })
+                    .set("Authorization", `Bearer ${token}`)
                     .set('Accept', 'application/json');
+                console.log("Response:", response.body);
 
                 expect(response.statusCode).toBe(404);
                 expect(response.body.message).toBe('Post not found');

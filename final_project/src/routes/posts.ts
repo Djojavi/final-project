@@ -46,13 +46,11 @@ postRouter.post('/api/v1.0/posts',authMiddleware ,async (req: Request, res: Resp
   res.status(201).json(newPost);
 });
 
-
-
-postRouter.put('/api/v1.0/posts/:id', async (req: Request, res: Response) => {
+postRouter.put('/api/v1.0/posts/:id', authMiddleware, async (req: Request, res: Response) => {
   const postId = parseInt(req.params.id as string);
   const title = req.body.title;
   const content = req.body.content;
-  const authorId = req.body.authorId;
+  const authorId = req.userId ?? 0; 
   
   if (!validatePostFields(title, content, authorId)) {
     return res.status(400).json({ message: 'Invalid post data' });

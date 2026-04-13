@@ -1,8 +1,17 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import express, { Request, Response, Application } from 'express';
+import express, { Request, Response, Application, NextFunction } from 'express';
 import prisma from '../../lib/prisma.ts';
-import { validateEmail, validateFieldsUser, validatePassword, hashPassword } from "../utils/user.utils.ts";
+import { validateEmail, validateFieldsUser, validatePassword, hashPassword, comparePasswords } from "../utils/user.utils.ts";
+import jwt from 'jsonwebtoken';
+
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: number; 
+    }
+  }
+}
 
 export const userRouter = express.Router();
 
@@ -53,4 +62,56 @@ userRouter.post('/api/v1.0/users', async (req: Request, res: Response) => {
   res.status(201).json(newUser);
 });
 
+userRouter.post("/login", async (req: Request, res: Response) => {
+  const { email, password } = req.body;
 
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const validPassword = comparePasswords(password, user.password)
+
+  if (!validPassword) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const token = jwt.sign(
+    { userId: user.id },  
+    process.env.JWT_SECRET!,
+    { expiresIn: "1d" }
+  );
+
+  res.json({ token });
+});
+
+export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ error: "No token" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+
+    req.userId = decoded.userId;
+
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+userRouter.get("/profile", authMiddleware, async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.userId },
+  });
+
+  res.json(user);
+});

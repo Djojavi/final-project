@@ -17,12 +17,11 @@ app.use('/', userRouter);
 app.use('/', postRouter);
 
 app.get('/', (req, res) => {
-  console.log(__dirname)
   res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
 app.get('/home', (req, res) => {
-  console.log(__dirname)
+  console.log(req.headers);
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 

@@ -1,7 +1,9 @@
 import request from "supertest";
 import express from 'express';
 import { expect, describe, jest, it } from '@jest/globals';
+import jwt from "jsonwebtoken";
 
+process.env.JWT_SECRET = 'test-secret';
 const mockFindMany: jest.Mock<any> = jest.fn();
 const mockCreate: jest.Mock<any> = jest.fn();
 const mockFindUnique: jest.Mock<any> = jest.fn();
@@ -35,8 +37,10 @@ describe("Post operations", () => {
                     { id: 3, title: "Third Post", content: "This is the third post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
                     { id: 4, title: "Fourth Post", content: "This is the fourth post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
                 ]);
-
-                const res = await request(app).get("/api/v1.0/posts");
+                const token = jwt.sign({ userId: 1 },process.env.JWT_SECRET!);
+                const res = await request(app)
+                    .get("/api/v1.0/posts")
+                    .set("Authorization", `Bearer ${token}`);
 
                 expect(res.status).toBe(200);
                 expect(res.body).toEqual([
@@ -52,7 +56,11 @@ describe("Post operations", () => {
             it("should return an empty list", async () => {
                 mockFindMany.mockResolvedValue([]);
 
-                const res = await request(app).get("/api/v1.0/posts");
+                const token = jwt.sign({ userId: 1 },process.env.JWT_SECRET!);
+                const res = await request(app)
+                    .get("/api/v1.0/posts")
+                    .set("Authorization", `Bearer ${token}`);
+
                 expect(res.status).toBe(200);
                 expect(res.body).toEqual([]);
             });
@@ -68,7 +76,10 @@ describe("Post operations", () => {
                     { id: 4, title: "Fourth Post", content: "This is the fourth post", authorId: 1, createdAt: "2026-04-09T15:42:31.398Z" },
                 ]);
 
-                const res = await request(app).get("/api/v1.0/posts");
+                const token = jwt.sign({ userId: 1 },process.env.JWT_SECRET!);
+                const res = await request(app)
+                    .get("/api/v1.0/posts")
+                    .set("Authorization", `Bearer ${token}`);
 
                 expect(res.status).toBe(200);
                 expect(res.body).toEqual([
@@ -107,7 +118,7 @@ describe("Post operations", () => {
             });
 
             it('should return a code 400 when authorId doesnt exist', async () => {
-                mockFindUnique.mockResolvedValue(null); 
+                mockFindUnique.mockResolvedValue(null);
 
                 const response = await request(app)
                     .post('/api/v1.0/posts')

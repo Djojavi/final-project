@@ -3,18 +3,17 @@ import { PrismaClient } from "@prisma/client";
 import express, { Request, Response, Application } from 'express';
 import prisma from '../../lib/prisma.ts';
 import { validatePostFields } from "../utils/posts.utils.ts";
+import { authMiddleware } from "../middleware/auth.ts";
 
 export const postRouter = express.Router();
 
 
-postRouter.get('/api/v1.0/posts', async (req: Request, res: Response) => {
-  const posts = await prisma.post.findMany();
-
-  res.json(posts);
-});
-
-postRouter.get('/api/v1.0/posts/:idAuthor', async (req: Request, res: Response) => {
-  const posts = await prisma.post.findMany({where: { authorId: parseInt(req.params.idAuthor as string) }});
+postRouter.get('/api/v1.0/posts', authMiddleware, async (req, res) => {
+  const posts = await prisma.post.findMany({
+    where: {
+      authorId: req.userId, 
+    },
+  });
 
   res.json(posts);
 });

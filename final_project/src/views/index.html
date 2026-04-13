@@ -15,14 +15,20 @@
 <ul id="users"></ul>
 
 <script>
-  fetch('/api/v1.0/posts')
+  const token = localStorage.getItem("token");
+
+  fetch('/api/v1.0/posts', {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
     .then(res => res.json())
     .then(posts => {
       const list = document.getElementById('posts');
 
       posts.forEach(post => {
         const li = document.createElement('li');
-        li.textContent = post.title ;
+        li.textContent = post.title;
         list.appendChild(li);
       });
     });

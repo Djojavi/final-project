@@ -4,11 +4,12 @@ import express, { Request, Response, Application, NextFunction } from 'express';
 import prisma from '../../lib/prisma.ts';
 import { validateEmail, validateFieldsUser, validatePassword, hashPassword, comparePasswords } from "../utils/user.utils.ts";
 import jwt from 'jsonwebtoken';
+import { authMiddleware } from "../middleware/auth.ts";
 
 declare global {
   namespace Express {
     interface Request {
-      userId?: number; 
+      userId?: number;
     }
   }
 }
@@ -80,7 +81,7 @@ userRouter.post("/login", async (req: Request, res: Response) => {
   }
 
   const token = jwt.sign(
-    { userId: user.id },  
+    { userId: user.id },
     process.env.JWT_SECRET!,
     { expiresIn: "1d" }
   );
@@ -88,25 +89,6 @@ userRouter.post("/login", async (req: Request, res: Response) => {
   res.json({ token });
 });
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ error: "No token" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
-
-    req.userId = decoded.userId;
-
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid token" });
-  }
-};
 
 userRouter.get("/profile", authMiddleware, async (req, res) => {
   const user = await prisma.user.findUnique({

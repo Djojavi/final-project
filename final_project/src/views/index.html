@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,64 +12,102 @@
 
 <body style="font-family: Arial, sans-serif; background:#f4f6f8; margin:0;">
 
-<div style="max-width:800px; margin:40px auto; padding:0 20px;">
+  <div style="max-width:800px; margin:40px auto; padding:0 20px;">
 
-  <!-- HEADER FLEX -->
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-    <h1 style="margin:0; font-size:24px;">My Posts</h1>
+    <!-- HEADER FLEX -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+      <h1 style="margin:0; font-size:24px;">My Posts</h1>
 
-    <div style="display:flex; gap:10px;">
-      <button 
-        onclick="createPost()"
-        style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#4CAF50; color:white; display:flex; align-items:center; gap:6px;">
-        <i class="fi fi-rr-plus"></i> Create
-      </button>
+      <div style="display:flex; gap:10px;">
+        <button onclick="document.getElementById('myDialog').showModal()"
+          style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#4CAF50; color:white; display:flex; align-items:center; gap:6px;">
+          <i class="fi fi-rr-plus"></i> Create
+        </button>
 
-      <button 
-        onclick="logout()"
-        style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#e0e0e0; color:#333; display:flex; align-items:center; gap:6px;">
-        <i class="fi fi-rr-sign-out"></i> Logout
-      </button>
+        <button onclick="logout()"
+          style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#e0e0e0; color:#333; display:flex; align-items:center; gap:6px;">
+          <i class="fi fi-rr-sign-out"></i> Logout
+        </button>
+      </div>
     </div>
+
+    <!-- POSTS -->
+    <div id="posts" style="display:flex; flex-direction:column; gap:15px;"></div>
+
+    <!-- DIALOG -->
+    <dialog id="myDialog"
+      style="border:none; border-radius:12px; padding:0; width:100%; max-width:400px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+
+      <div style="padding:20px; display:flex; flex-direction:column; gap:15px;">
+
+        <h2 style="margin:0; font-size:20px;">Create a Post</h2>
+
+        <form onsubmit="event.preventDefault(); savePost();" style="display:flex; flex-direction:column; gap:12px;">
+
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <label for="title" style="font-size:14px; color:#555;">Title</label>
+            <input type="text" id="title" name="title" required
+              style="padding:10px; border-radius:6px; border:1px solid #ccc; font-size:14px; outline:none;">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <label for="content" style="font-size:14px; color:#555;">Content</label>
+            <textarea id="content" name="content" required rows="4"
+              style="padding:10px; border-radius:6px; border:1px solid #ccc; font-size:14px; resize:none; outline:none;"></textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+
+            <button type="button" onclick="document.getElementById('myDialog').close()"
+              style="background:#e0e0e0; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">
+              Cancel
+            </button>
+
+            <button type="submit"
+              style="background:#4CAF50; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">
+              Save
+            </button>
+
+          </div>
+
+        </form>
+      </div>
+    </dialog>
+
   </div>
 
-  <!-- POSTS -->
-  <div id="posts" style="display:flex; flex-direction:column; gap:15px;"></div>
+  <script>
+    const token = localStorage.getItem("token");
 
-</div>
+    if (!token) {
+      alert("You are not logged in");
+      window.location.href = "/login.html";
+    }
 
-<script>
-const token = localStorage.getItem("token");
+    // FETCH POSTS
+    fetch('/api/v1.0/posts', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Unauthorized");
+        return res.json();
+      })
+      .then(posts => {
+        const container = document.getElementById('posts');
 
-if (!token) {
-  alert("You are not logged in");
-  window.location.href = "/login.html";
-}
+        if (posts.length === 0) {
+          container.innerHTML = "<p style='text-align:center; color:#777; margin-top:40px;'>No posts yet</p>";
+          return;
+        }
 
-// FETCH POSTS
-fetch('/api/v1.0/posts', {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
-})
-.then(res => {
-  if (!res.ok) throw new Error("Unauthorized");
-  return res.json();
-})
-.then(posts => {
-  const container = document.getElementById('posts');
+        posts.forEach(post => {
+          const div = document.createElement('div');
 
-  if (posts.length === 0) {
-    container.innerHTML = "<p style='text-align:center; color:#777; margin-top:40px;'>No posts yet</p>";
-    return;
-  }
+          div.style = "background:white; padding:20px; border:1px solid #ddd; border-radius:6px;";
 
-  posts.forEach(post => {
-    const div = document.createElement('div');
-
-    div.style = "background:white; padding:20px; border:1px solid #ddd; border-radius:6px;";
-
-    div.innerHTML = `
+          div.innerHTML = `
       <h3 style="margin:0 0 10px;">${post.title}</h3>
       <p style="color:#555; font-size:14px;">${post.content}</p>
 
@@ -85,76 +124,77 @@ fetch('/api/v1.0/posts', {
       </div>
     `;
 
-    container.appendChild(div);
-  });
-})
-.catch(err => {
-  console.error(err);
-  alert("Session expired. Please log in again.");
-  localStorage.removeItem("token");
-  window.location.href = "/login.html";
-});
+          container.appendChild(div);
+        });
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Session expired. Please log in again.");
+        localStorage.removeItem("token");
+        window.location.href = "/login.html";
+      });
 
-// CREATE POST
-function createPost() {
-  const title = prompt("Post title:");
-  if (!title) return;
+    // DELETE POST
+    async function deletePost(id) {
+      const confirmDelete = confirm("Delete this post?");
+      if (!confirmDelete) return;
 
-  const content = prompt("Post content:");
-  if (!content) return;
+      await fetch(`/api/v1.0/posts/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-  fetch('/api/v1.0/posts', {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ title, content })
-  }).then(() => location.reload());
-}
-
-// DELETE POST
-async function deletePost(id) {
-  const confirmDelete = confirm("Delete this post?");
-  if (!confirmDelete) return;
-
-  await fetch(`/api/v1.0/posts/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`
+      location.reload();
     }
-  });
 
-  location.reload();
-}
+    // EDIT POST
+    function editPost(id) {
+      const newTitle = prompt("New title:");
+      if (!newTitle) return;
 
-// EDIT POST
-function editPost(id) {
-  const newTitle = prompt("New title:");
-  if (!newTitle) return;
+      const newContent = prompt("New content:");
+      if (!newContent) return;
 
-  const newContent = prompt("New content:");
-  if (!newContent) return;
+      fetch(`/api/v1.0/posts/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: newTitle,
+          content: newContent
+        })
+      }).then(() => location.reload());
+    }
 
-  fetch(`/api/v1.0/posts/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      title: newTitle,
-      content: newContent
-    })
-  }).then(() => location.reload());
-}
+    // LOGOUT
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "/";
+    }
 
-// LOGOUT
-function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "/";
-}
-</script>
+    //SAVE POST
+    function savePost() {
+      const title = document.getElementById("title").value;
+      const content = document.getElementById("content").value;
+
+      fetch('/api/v1.0/posts', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, content })
+      }).then(() => {
+        document.getElementById('myDialog').close();
+        location.reload();
+      });
+    }
+  </script>
 
 </body>
+
 </html>

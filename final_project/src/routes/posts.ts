@@ -18,10 +18,10 @@ postRouter.get('/api/v1.0/posts', authMiddleware, async (req, res) => {
   res.json(posts);
 });
 
-postRouter.post('/api/v1.0/posts', async (req: Request, res: Response) => {
+postRouter.post('/api/v1.0/posts',authMiddleware ,async (req: Request, res: Response) => {
   const title = req.body.title;
   const content = req.body.content;
-  const authorId = req.body.authorId;
+  const authorId= req.userId ?? 0; 
 
   if (!validatePostFields(title, content, authorId)) {
     return res.status(400).json({ message: 'Invalid post data' });

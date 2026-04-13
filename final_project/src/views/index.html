@@ -1,37 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Blog</title>
+
+  <!-- Flaticon Icons -->
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+</head>
+
+<body style="font-family: Arial, sans-serif; background:#f4f6f8; margin:0;">
+
+<div style="max-width:800px; margin:40px auto; padding:0 20px;">
+
+  <!-- HEADER FLEX -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+    <h1 style="margin:0; font-size:24px;">My Posts</h1>
+
+    <div style="display:flex; gap:10px;">
+      <button 
+        onclick="createPost()"
+        style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#4CAF50; color:white; display:flex; align-items:center; gap:6px;">
+        <i class="fi fi-rr-plus"></i> Create
+      </button>
+
+      <button 
+        onclick="logout()"
+        style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#e0e0e0; color:#333; display:flex; align-items:center; gap:6px;">
+        <i class="fi fi-rr-sign-out"></i> Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- POSTS -->
+  <div id="posts" style="display:flex; flex-direction:column; gap:15px;"></div>
+
+</div>
+
 <script>
-  fetch('/api/v1.0/users')
-    .then(res => res.json())
-    .then(users => {
-      const list = document.getElementById('users');
+const token = localStorage.getItem("token");
 
-      users.forEach(user => {
-        const li = document.createElement('li');
-        li.textContent = user.firstName + ' ' + user.lastName;
-        list.appendChild(li);
-      });
-    });
-</script>
+if (!token) {
+  alert("You are not logged in");
+  window.location.href = "/login.html";
+}
 
-<ul id="users"></ul>
+// FETCH POSTS
+fetch('/api/v1.0/posts', {
+  headers: {
+    Authorization: `Bearer ${token}`
+  }
+})
+.then(res => {
+  if (!res.ok) throw new Error("Unauthorized");
+  return res.json();
+})
+.then(posts => {
+  const container = document.getElementById('posts');
 
-<script>
-  const token = localStorage.getItem("token");
+  if (posts.length === 0) {
+    container.innerHTML = "<p style='text-align:center; color:#777; margin-top:40px;'>No posts yet</p>";
+    return;
+  }
+
+  posts.forEach(post => {
+    const div = document.createElement('div');
+
+    div.style = "background:white; padding:20px; border:1px solid #ddd; border-radius:6px;";
+
+    div.innerHTML = `
+      <h3 style="margin:0 0 10px;">${post.title}</h3>
+      <p style="color:#555; font-size:14px;">${post.content}</p>
+
+      <div style="margin-top:15px; display:flex; gap:10px;">
+        <button onclick="editPost(${post.id})"
+          style="border:none; border-radius:6px; padding:6px 10px; cursor:pointer; background:#e0e0e0; display:flex; align-items:center; gap:6px;">
+          <i class="fi fi-rr-edit"></i> Edit
+        </button>
+
+        <button onclick="deletePost(${post.id})"
+          style="border:none; border-radius:6px; padding:6px 10px; cursor:pointer; background:#f44336; color:white; display:flex; align-items:center; gap:6px;">
+          <i class="fi fi-rr-trash"></i> Delete
+        </button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+})
+.catch(err => {
+  console.error(err);
+  alert("Session expired. Please log in again.");
+  localStorage.removeItem("token");
+  window.location.href = "/login.html";
+});
+
+// CREATE POST
+function createPost() {
+  const title = prompt("Post title:");
+  if (!title) return;
+
+  const content = prompt("Post content:");
+  if (!content) return;
 
   fetch('/api/v1.0/posts', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ title, content })
+  }).then(() => location.reload());
+}
+
+// DELETE POST
+async function deletePost(id) {
+  const confirmDelete = confirm("Delete this post?");
+  if (!confirmDelete) return;
+
+  await fetch(`/api/v1.0/posts/${id}`, {
+    method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`
     }
-  })
-    .then(res => res.json())
-    .then(posts => {
-      const list = document.getElementById('posts');
+  });
 
-      posts.forEach(post => {
-        const li = document.createElement('li');
-        li.textContent = post.title;
-        list.appendChild(li);
-      });
-    });
+  location.reload();
+}
+
+// EDIT POST
+function editPost(id) {
+  const newTitle = prompt("New title:");
+  if (!newTitle) return;
+
+  const newContent = prompt("New content:");
+  if (!newContent) return;
+
+  fetch(`/api/v1.0/posts/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      title: newTitle,
+      content: newContent
+    })
+  }).then(() => location.reload());
+}
+
+// LOGOUT
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "/";
+}
 </script>
 
-<ul id="posts"></ul>
+</body>
+</html>

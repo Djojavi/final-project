@@ -1,0 +1,31 @@
+<script>
+  fetch('/api/v1.0/users')
+    .then(res => res.json())
+    .then(users => {
+      const list = document.getElementById('users');
+
+      users.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = user.firstName + ' ' + user.lastName;
+        list.appendChild(li);
+      });
+    });
+</script>
+
+<ul id="users"></ul>
+
+<script>
+  fetch('/api/v1.0/posts')
+    .then(res => res.json())
+    .then(posts => {
+      const list = document.getElementById('posts');
+
+      posts.forEach(post => {
+        const li = document.createElement('li');
+        li.textContent = post.title ;
+        list.appendChild(li);
+      });
+    });
+</script>
+
+<ul id="posts"></ul>

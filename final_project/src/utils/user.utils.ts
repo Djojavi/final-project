@@ -37,3 +37,7 @@ export function hashPassword(password: string): Promise<string> {
         .then((hashedPassword) => hashedPassword);
 }
 
+export function comparePasswords(password: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(password, hashedPassword);
+}
+

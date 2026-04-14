@@ -13,6 +13,10 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+    defaults:
+      run:
+        working-directory: final_project
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -36,5 +40,6 @@ jobs:
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
+          working-directory: final_project
           start: npm run start
           wait-on: http://localhost:3000

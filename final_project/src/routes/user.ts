@@ -60,7 +60,13 @@ userRouter.post('/api/v1.0/users', async (req: Request, res: Response) => {
     }
   });
 
-  res.status(201).json(newUser);
+  const token = jwt.sign(
+    { userId: newUser.id},
+    process.env.JWT_SECRET!,
+    { expiresIn: "1d" }
+  );
+
+  res.json({ token });
 });
 
 userRouter.post("/login", async (req: Request, res: Response) => {

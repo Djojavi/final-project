@@ -114,10 +114,8 @@
     function renderPosts(posts) {
       const container = document.getElementById('posts');
 
-      // limpiar antes de renderizar
       container.innerHTML = "";
 
-      // caso vacío
       if (!posts || posts.length === 0) {
         container.innerHTML = `
       <p style="text-align:center; color:#777; margin-top:40px;">

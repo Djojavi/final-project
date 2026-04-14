@@ -34,17 +34,17 @@
         <div style="display:flex; gap:25px; padding-bottom: 10px;">
             <div>
                 <input type="checkbox" id="a" name="a" value="a">
-                <label for="a"> A</label><br>
+                <label for="a"> A <span id="aUsers"></span></label><br>
             </div>
 
             <div>
                 <input type="checkbox" id="b" name="b" value="b">
-                <label for="b"> B</label><br>
+                <label for="b"> B <span id="bUsers"></span></label><br>
             </div>
 
             <div>
                 <input type="checkbox" id="c" name="c" value="c">
-                <label for="c"> C</label><br>
+                <label for="c"> C <span id="cUsers"></span></label><br>
             </div>
 
         </div>
@@ -58,6 +58,7 @@
     <script>
         const token = localStorage.getItem("token");
         const decodedPayload = token ? JSON.parse(atob(token.split('.')[1])) : null;
+        const counts = { a: 0, b: 0, c: 0 };
 
         fetch('/api/v1.0/users', {
             headers: {
@@ -78,6 +79,12 @@
                 }
 
                 users.forEach(user => {
+                    const firstLetter = user.firstName[0].toLowerCase();
+
+                    if (counts.hasOwnProperty(firstLetter)) {
+                        counts[firstLetter]++;
+                    }
+
                     const div = document.createElement('div');
 
                     div.style.background = 'white';
@@ -99,10 +106,21 @@
 
                     container.appendChild(div);
                 });
+                document.getElementById("aUsers").textContent = `(${counts.a})`;
+                document.getElementById("bUsers").textContent = `(${counts.b})`;
+                document.getElementById("cUsers").textContent = `(${counts.c})`;
             })
             .catch(err => {
                 console.error(err);
             });
+
+
+        // LOGOUT
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "/";
+        }
+
 
 
     </script>

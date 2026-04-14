@@ -1,6 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import express, { Request, Response, Application } from 'express';
+import type { Request, Response } from 'express'  
+import express from 'express';
 import prisma from '../../lib/prisma.ts';
 import { validatePostFields } from "../utils/posts.utils.ts";
 import { authMiddleware } from "../middleware/auth.ts";

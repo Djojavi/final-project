@@ -1,4 +1,5 @@
-import express, { Request, Response , NextFunction } from 'express';
+import express, { Request, Response  } from 'express';
+import type { Express, NextFunction } from 'express'  // type-only import
 import jwt from 'jsonwebtoken';
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {

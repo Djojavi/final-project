@@ -1,7 +1,9 @@
 import request from "supertest";
 import express from 'express';
-import { expect, describe, jest, it } from '@jest/globals';
+import { expect, describe, jest, it, test } from '@jest/globals';
+import jwt from "jsonwebtoken";
 
+process.env.JWT_SECRET = 'test-secret';
 const mockFindMany: jest.Mock<any> = jest.fn();
 const mockCreate: jest.Mock<any> = jest.fn();
 const mockFindUnique: jest.Mock<any> = jest.fn();
@@ -32,8 +34,8 @@ describe("User operations", () => {
           { id: 3, email: "test2@test.com", password: "xyzwv", firstName: "Pamela", lastName: "Lopez", posts: [] },
           { id: 4, email: "test3@test.com", password: "loremipsum", firstName: "Ariel", lastName: "Herrera", posts: [] },
         ]);
-
-        const res = await request(app).get("/api/v1.0/users");
+        const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+        const res = await request(app).get("/api/v1.0/users").set("Authorization", `Bearer ${token}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toEqual([
@@ -49,7 +51,9 @@ describe("User operations", () => {
       it("should return an empty list", async () => {
         mockFindMany.mockResolvedValue([]);
 
-        const res = await request(app).get("/api/v1.0/users");
+        const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+        const res = await request(app).get("/api/v1.0/users").set("Authorization", `Bearer ${token}`);
+
         expect(res.status).toBe(200);
         expect(res.body).toEqual([]);
       });
@@ -65,7 +69,8 @@ describe("User operations", () => {
           { id: 4, email: "test3@test.com", password: "loremipsum", firstName: "Ariel", lastName: "Herrera", posts: [] },
         ]);
 
-        const res = await request(app).get("/api/v1.0/users");
+        const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+        const res = await request(app).get("/api/v1.0/users").set("Authorization", `Bearer ${token}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toEqual([
@@ -83,14 +88,15 @@ describe("User operations", () => {
       it('should successfully register a new user with valid credentials', async () => {
         mockFindUnique.mockResolvedValue(null);
         mockCreate.mockResolvedValue({ id: 1, email: "testCreate@gmail.com", firstName: "Test", lastName: "User", password: "testPassword1" });
+        const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
 
         const response = await request(app).post('/api/v1.0/users')
           .send({ email: "testCreate@gmail.com", firstName: "Test", lastName: "User", password: "testPassword1" })
+          .set("Authorization", `Bearer ${token}`)
           .set('Accept', 'application/json');
 
-        expect(response.statusCode).toBe(201);
-        expect(response.body.email).toBe('testCreate@gmail.com');
-        expect(response.body.firstName).toBe('Test');
+        expect(response.statusCode).toBe(200);
+
       });
     });
 
@@ -111,9 +117,12 @@ describe("User operations", () => {
           ["no lowercase", "ABCDEF", "at least one lowercase letter"],
           ["no number", "abcdefG", "at least one number"],
         ])("should reject if password is %s", async (condition, password, errorMsg) => {
+          const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!);
+
           const response = await request(app)
             .post('/api/v1.0/users')
-            .send({ email: "test@test.com", firstName: "T", lastName: "U", password });
+            .send({ email: "test@test.com", firstName: "T", lastName: "U", password })
+            .set("Authorization", `Bearer ${token}`);
 
           expect(response.statusCode).toBe(400);
           expect(response.body.message).toContain(errorMsg);

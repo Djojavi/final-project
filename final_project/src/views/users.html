@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Blog</title>
+
+    <link rel="stylesheet"
+        href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+</head>
+
+<body style="font-family: Arial, sans-serif; background:#f4f6f8; margin:0;">
+
+    <div style="max-width:800px; margin:40px auto; padding:0 20px;">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+
+            <div style="display:flex; gap:10px">
+                <h1 style="margin:0; font-size:24px; color:#858585; cursor:pointer;"
+                    onclick="window.location.href = '/home'">
+                    My Posts
+                </h1>
+
+                <h1 style="margin:0; font-size:24px; cursor:pointer;"
+                    onclick="window.location.href = '/users'">
+                    Users
+                </h1>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="logout()"
+                    style="border:none; border-radius:6px; padding:8px 12px; cursor:pointer; background:#e0e0e0; display:flex; align-items:center; gap:6px;">
+                    <i class="fi fi-rr-sign-out"></i>
+                    Logout
+                </button>
+            </div>
+
+        </div>
+
+        <h2>I want to see users that start with...</h2>
+
+        <div style="display:flex; gap:25px; padding-bottom:10px;">
+
+            <div>
+                <input type="checkbox" id="a" name="a" value="a">
+                <label for="a">
+                    A <span id="aUsers"></span>
+                </label>
+            </div>
+
+            <div>
+                <input type="checkbox" id="b" name="b" value="b">
+                <label for="b">
+                    B <span id="bUsers"></span>
+                </label>
+            </div>
+
+            <div>
+                <input type="checkbox" id="c" name="c" value="c">
+                <label for="c">
+                    C <span id="cUsers"></span>
+                </label>
+            </div>
+
+        </div>
+
+        <div id="users" style="display:flex; flex-direction:column; gap:15px;"></div>
+
+    </div>
+
+    <script>
+        let allUsers = [];
+
+        function renderUsers(users) {
+            const container = document.getElementById('users');
+            container.innerHTML = '';
+
+            if (users.length === 0) {
+                container.innerHTML =
+                    "<p style='text-align:center; color:#777; margin-top:40px;'>No users yet</p>";
+                return;
+            }
+
+            const filters = ["a", "b", "c"].filter(letter =>
+                document.getElementById(letter).checked
+            );
+
+            users.forEach(user => {
+                const firstLetter = user.firstName[0].toLowerCase();
+
+                if (filters.length > 0 && !filters.includes(firstLetter)) {
+                    return;
+                }
+
+                const div = document.createElement('div');
+
+                div.style.background = 'white';
+                div.style.padding = '20px';
+                div.style.border = '1px solid #ddd';
+                div.style.borderRadius = '6px';
+
+                const isCurrentUser = user.id === decodedPayload?.userId;
+
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                        ${isCurrentUser ? "<i class='fi fi-rr-user'></i>" : ""}
+                        <h3 style="margin:0;">
+                            ${user.firstName} ${user.lastName}
+                        </h3>
+                    </div>
+                    <p style="margin:0;">${user.email}</p>
+                `;
+
+                container.appendChild(div);
+            });
+        }
+
+        const token = localStorage.getItem("token");
+        const decodedPayload = token
+            ? JSON.parse(atob(token.split('.')[1]))
+            : null;
+
+        const counts = { a: 0, b: 0, c: 0 };
+
+        fetch('/api/v1.0/users', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("Unauthorized");
+                return res.json();
+            })
+            .then(users => {
+                allUsers = users;
+
+                users.forEach(user => {
+                    const firstLetter = user.firstName[0].toLowerCase();
+
+                    if (counts.hasOwnProperty(firstLetter)) {
+                        counts[firstLetter]++;
+                    }
+                });
+
+                renderUsers(allUsers);
+
+                document.getElementById("aUsers").textContent = `(${counts.a})`;
+                document.getElementById("bUsers").textContent = `(${counts.b})`;
+                document.getElementById("cUsers").textContent = `(${counts.c})`;
+            })
+            .catch(err => {
+                console.error(err);
+            });
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "/";
+        }
+
+        document.querySelectorAll("input[type='checkbox']").forEach(cb => {
+            cb.addEventListener("change", () => {
+                renderUsers(allUsers);
+            });
+        });
+    </script>
+
+</body>
+
+</html>

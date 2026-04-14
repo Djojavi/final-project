@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "dev": "node --import ts-node/esm src/server.ts --trace-uncaught"
+    "dev": "node --import ts-node/esm --experimental-require-module src/server.ts"
   },
   "author": "",
   "license": "ISC",

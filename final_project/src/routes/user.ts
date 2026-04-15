@@ -1,8 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from 'express'  
 import express from 'express';
-import prisma from '../../lib/prisma.ts';
+import prisma from '../../lib/prisma.js';
 import { validateEmail, validateFieldsUser, validatePassword, hashPassword, comparePasswords } from "../utils/user.utils.ts";
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from "../middleware/auth.ts";

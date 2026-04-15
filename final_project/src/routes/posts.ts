@@ -1,5 +1,4 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from 'express'  
 import express from 'express';
 import prisma from '../../lib/prisma.ts';
